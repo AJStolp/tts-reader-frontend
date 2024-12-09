@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:typed_data';
+import 'file_saver.dart'; // Import the conditional file saver
 import 'package:audioplayers/audioplayers.dart';
 
 void main() {
@@ -8,7 +10,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,20 +23,19 @@ class MyApp extends StatelessWidget {
 }
 
 class TtsPage extends StatefulWidget {
-  const TtsPage({super.key});
+  const TtsPage({Key? key}) : super(key: key);
 
   @override
-  TtsPageState createState() => TtsPageState();
+  _TtsPageState createState() => _TtsPageState();
 }
 
-class TtsPageState extends State<TtsPage> {
+class _TtsPageState extends State<TtsPage> {
   final TextEditingController _textController = TextEditingController();
   String _selectedVoice = 'Joanna'; // Default voice
-  String? _audioUrl; // URL of the audio file
+  String? _audioSource; // Path or URL to the audio
   bool _isLoading = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  // Function to send a TTS request
   Future<void> generateTts() async {
     setState(() {
       _isLoading = true;
@@ -50,12 +51,14 @@ class TtsPageState extends State<TtsPage> {
       final response = await http.post(url,
           headers: {'Content-Type': 'application/json'}, body: body);
 
-      if (!mounted) return;
-
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final audioBytes = response.bodyBytes;
+
+        // Save audio for playback
+        final savedAudio = await saveAudio(audioBytes);
+
         setState(() {
-          _audioUrl = data['audio_url'];
+          _audioSource = savedAudio; // Set the source for playback
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -63,11 +66,9 @@ class TtsPageState extends State<TtsPage> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -75,10 +76,18 @@ class TtsPageState extends State<TtsPage> {
     }
   }
 
-  // Function to play the generated audio
   void playAudio() async {
-    if (_audioUrl != null) {
-      await _audioPlayer.play(_audioUrl!);
+    if (_audioSource != null) {
+      if (_audioSource!.startsWith('http')) {
+        await _audioPlayer.play(_audioSource!); // For web, play via URL
+      } else {
+        await _audioPlayer.play(_audioSource!,
+            isLocal: true); // For mobile/desktop, play locally
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No audio file found.')),
+      );
     }
   }
 
@@ -118,7 +127,7 @@ class TtsPageState extends State<TtsPage> {
                   : const Text('Generate TTS'),
             ),
             const SizedBox(height: 16),
-            if (_audioUrl != null)
+            if (_audioSource != null)
               ElevatedButton(
                 onPressed: playAudio,
                 child: const Text('Play Audio'),
