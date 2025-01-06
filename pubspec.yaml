@@ -11,9 +11,11 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^0.13.6
-  just_audio: ^0.9.35 # Add the just_audio dependency
+  just_audio: ^0.9.35
   cupertino_icons: ^1.0.8
   path_provider: ^2.0.11
+  web_text_reader:
+    path: ./web_text_reader
 
 dev_dependencies:
   flutter_test:

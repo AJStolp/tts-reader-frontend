@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:just_audio/just_audio.dart'; // Import just_audio package
 import 'custom_stream_audio_source.dart'; // Import the custom audio source
+import 'package:web_text_reader/web_text_reader.dart';
 
 void main() {
   runApp(const MyApp());
@@ -85,7 +86,11 @@ class _TtsPageState extends State<TtsPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 16),
+            const WebTextReaderWidget(), // Add the widget here
+            const SizedBox(height: 16),
             TextField(
               controller: _textController,
               decoration: const InputDecoration(
@@ -107,14 +112,54 @@ class _TtsPageState extends State<TtsPage> {
               },
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _isLoading ? null : generateAndPlayTts,
-              child: _isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Generate and Play TTS'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: _isLoading ? null : generateAndPlayTts,
+                  child: _isLoading
+                      ? const CircularProgressIndicator()
+                      : const Text('Generate and Play TTS'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const DummyTextPage()),
+                    );
+                  },
+                  child: const Text('Go to Dummy Text Page'),
+                ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class DummyTextPage extends StatelessWidget {
+  const DummyTextPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Dummy Text Page')),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'This is a dummy text page for testing the WebTextReaderWidget.',
+            style: TextStyle(fontSize: 16),
+          ),
+          const Text(
+            'Flutter is an open-source UI software development toolkit created by Google. It is used to develop cross-platform applications for Android, iOS, Linux, macOS, Windows, and the web from a single codebase.',
+            style: TextStyle(fontSize: 14),
+          ),
+          const WebTextReaderWidget(), // Add widget here
+        ],
       ),
     );
   }
